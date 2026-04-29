@@ -189,6 +189,7 @@ export class RoomManager {
       type,
       payload,
       senderId: this.peerService.peerId!,
+      senderName: this._playerName,
       timestamp: Date.now(),
     };
 
@@ -196,6 +197,7 @@ export class RoomManager {
       this.messageBus.emit(msg);
       this.broadcast(msg);
     } else if (this._role === RoomRole.Client) {
+      this.messageBus.emit(msg);
       this.sendToHost(msg);
     }
   }

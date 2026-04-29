@@ -56,14 +56,14 @@
         <h3>消息</h3>
         <div ref="messageListRef" class="message-list">
           <div
-            v-for="(msg, i) in messages"
+            v-for="(msg, i) in chatMessages"
             :key="i"
             class="message-item"
           >
-            <span class="msg-type">{{ msg.type }}</span>
+            <span class="msg-sender">{{ msg.senderName || msg.senderId }}</span>
             <span class="msg-content">{{ formatPayload(msg.payload) }}</span>
           </div>
-          <div v-if="!messages.length" class="empty-hint">暂无消息</div>
+          <div v-if="!chatMessages.length" class="empty-hint">暂无消息</div>
         </div>
 
         <div class="send-bar">
@@ -87,9 +87,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import type { GameMessage, RoomState } from '@/core/types';
-import { type RoomRole } from '@/core/types';
+import { MessageType, type RoomRole } from '@/core/types';
 
 const props = defineProps<{
   roomState: RoomState | null;
@@ -104,6 +104,15 @@ const emit = defineEmits<{
 
 const msgInput = ref('');
 const messageListRef = ref<HTMLElement | null>(null);
+
+const systemTypes = new Set<string>([
+  MessageType.PLAYER_JOIN,
+  MessageType.PLAYER_LEAVE,
+  MessageType.ROOM_STATE,
+]);
+const chatMessages = computed(() =>
+  props.messages.filter((m) => !systemTypes.has(m.type as string)),
+);
 const showShareBanner = ref(true);
 const copied = ref(false);
 
@@ -117,7 +126,7 @@ const inviteLink = (() => {
 })();
 
 watch(
-  () => props.messages.length,
+  () => chatMessages.value.length,
   async () => {
     await nextTick();
     if (messageListRef.value) {
@@ -377,11 +386,15 @@ h2 {
   border-bottom: 1px solid #313244;
 }
 
-.msg-type {
+.msg-sender {
   color: #89b4fa;
   margin-right: 8px;
-  font-family: monospace;
-  font-size: 12px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.msg-sender::after {
+  content: ':';
 }
 
 .msg-content {

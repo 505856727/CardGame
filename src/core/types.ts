@@ -14,6 +14,7 @@ export interface GameMessage<T = unknown> {
   type: MessageType | string;
   payload: T;
   senderId: string;
+  senderName?: string;
   timestamp: number;
 }
 
