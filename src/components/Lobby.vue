@@ -1,95 +1,133 @@
 <template>
   <div class="lobby">
-    <h2>游戏大厅</h2>
+    <!-- 邀请链接模式：简洁的加入界面 -->
+    <template v-if="isInviteMode">
+      <div class="invite-banner">
+        <div class="invite-icon">&#127183;</div>
+        <h2>你收到了一个游戏邀请</h2>
+        <p class="invite-room-id">房间 ID: <code>{{ roomId }}</code></p>
+      </div>
 
-    <div class="form-group">
-      <label>玩家昵称</label>
-      <input
-        v-model="playerName"
-        type="text"
-        placeholder="输入你的昵称"
-        :disabled="loading"
-      />
-    </div>
+      <div class="form-group">
+        <label>输入你的昵称即可加入</label>
+        <input
+          ref="inviteNameInput"
+          v-model="playerName"
+          type="text"
+          placeholder="你的昵称"
+          :disabled="loading"
+          @keyup.enter="handleJoin"
+        />
+      </div>
 
-    <div class="actions">
       <button
-        class="btn btn-primary"
+        class="btn btn-primary btn-block"
         :disabled="!playerName.trim() || loading"
-        @click="handleCreate"
+        @click="handleJoin"
       >
-        {{ loading && mode === 'create' ? '创建中...' : '创建房间' }}
+        {{ loading ? '加入中...' : '立即加入' }}
       </button>
 
-      <div class="divider">或</div>
+      <button class="btn btn-link" @click="exitInviteMode">
+        返回大厅
+      </button>
 
-      <div class="join-group">
+      <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+    </template>
+
+    <!-- 普通大厅模式 -->
+    <template v-else>
+      <h2>游戏大厅</h2>
+
+      <div class="form-group">
+        <label>玩家昵称</label>
         <input
-          v-model="roomId"
+          v-model="playerName"
           type="text"
-          placeholder="输入房间 ID"
+          placeholder="输入你的昵称"
           :disabled="loading"
         />
-        <button
-          class="btn btn-secondary"
-          :disabled="!playerName.trim() || !roomId.trim() || loading"
-          @click="handleJoin"
-        >
-          {{ loading && mode === 'join' ? '加入中...' : '加入房间' }}
-        </button>
-      </div>
-    </div>
-
-    <!-- 房间列表 -->
-    <div class="room-list-section">
-      <div class="room-list-header">
-        <h3>在线房间</h3>
-        <button
-          class="btn btn-sm btn-outline"
-          :disabled="discovering"
-          @click="$emit('refresh')"
-        >
-          {{ discovering ? '搜索中...' : '刷新列表' }}
-        </button>
       </div>
 
-      <div v-if="rooms.length > 0" class="room-list">
-        <div
-          v-for="room in rooms"
-          :key="room.roomId"
-          class="room-card"
-          @click="selectRoom(room.roomId)"
+      <div class="actions">
+        <button
+          class="btn btn-primary"
+          :disabled="!playerName.trim() || loading"
+          @click="handleCreate"
         >
-          <div class="room-card-info">
-            <span class="room-host">{{ room.hostName }} 的房间</span>
-            <span class="room-id-label">{{ room.roomId }}</span>
-          </div>
-          <div class="room-card-meta">
-            <span class="player-count">{{ room.playerCount }} 人</span>
-            <button
-              class="btn btn-sm btn-secondary"
-              :disabled="!playerName.trim() || loading"
-              @click.stop="handleJoinRoom(room.roomId)"
-            >
-              加入
-            </button>
-          </div>
+          {{ loading && mode === 'create' ? '创建中...' : '创建房间' }}
+        </button>
+
+        <div class="divider">或</div>
+
+        <div class="join-group">
+          <input
+            v-model="roomId"
+            type="text"
+            placeholder="输入房间 ID"
+            :disabled="loading"
+          />
+          <button
+            class="btn btn-secondary"
+            :disabled="!playerName.trim() || !roomId.trim() || loading"
+            @click="handleJoin"
+          >
+            {{ loading && mode === 'join' ? '加入中...' : '加入房间' }}
+          </button>
         </div>
       </div>
 
-      <div v-else class="empty-rooms">
-        <p v-if="discovering">正在搜索房间...</p>
-        <p v-else-if="isPublicServer">公共服务器不支持房间列表，请通过房间 ID 或邀请链接加入</p>
-        <p v-else>暂无在线房间，点击"刷新列表"搜索或创建一个新房间</p>
-      </div>
-    </div>
+      <!-- 房间列表 -->
+      <div class="room-list-section">
+        <div class="room-list-header">
+          <h3>在线房间</h3>
+          <button
+            class="btn btn-sm btn-outline"
+            :disabled="discovering"
+            @click="$emit('refresh')"
+          >
+            {{ discovering ? '搜索中...' : '刷新列表' }}
+          </button>
+        </div>
 
-    <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+        <div v-if="rooms.length > 0" class="room-list">
+          <div
+            v-for="room in rooms"
+            :key="room.roomId"
+            class="room-card"
+            @click="selectRoom(room.roomId)"
+          >
+            <div class="room-card-info">
+              <span class="room-host">{{ room.hostName }} 的房间</span>
+              <span class="room-id-label">{{ room.roomId }}</span>
+            </div>
+            <div class="room-card-meta">
+              <span class="player-count">{{ room.playerCount }} 人</span>
+              <button
+                class="btn btn-sm btn-secondary"
+                :disabled="!playerName.trim() || loading"
+                @click.stop="handleJoinRoom(room.roomId)"
+              >
+                加入
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="empty-rooms">
+          <p v-if="discovering">正在搜索房间...</p>
+          <p v-else-if="isPublicServer">公共服务器不支持房间列表，请通过房间 ID 或邀请链接加入</p>
+          <p v-else>暂无在线房间，点击"刷新列表"搜索或创建一个新房间</p>
+        </div>
+      </div>
+
+      <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import type { RoomInfo } from '@/core/types';
 import { DEFAULT_SERVER_CONFIG } from '@/core/types';
 
@@ -106,6 +144,8 @@ const emit = defineEmits<{
 }>();
 
 const isPublicServer = computed(() => DEFAULT_SERVER_CONFIG.host === '0.peerjs.com');
+const isInviteMode = ref(!!props.initialRoomId);
+const inviteNameInput = ref<HTMLInputElement | null>(null);
 
 const playerName = ref('');
 const roomId = ref(props.initialRoomId ?? '');
@@ -113,9 +153,23 @@ const loading = ref(false);
 const mode = ref<'create' | 'join' | null>(null);
 const errorMsg = ref('');
 
-onMounted(() => {
-  emit('refresh');
+onMounted(async () => {
+  if (!isInviteMode.value) {
+    emit('refresh');
+  }
+  await nextTick();
+  inviteNameInput.value?.focus();
 });
+
+function exitInviteMode() {
+  isInviteMode.value = false;
+  roomId.value = '';
+  // 清除 URL 中的 room 参数
+  const url = new URL(window.location.href);
+  url.searchParams.delete('room');
+  window.history.replaceState({}, '', url.toString());
+  emit('refresh');
+}
 
 function selectRoom(id: string) {
   roomId.value = id;
@@ -171,6 +225,59 @@ h2 {
   font-size: 24px;
 }
 
+/* 邀请模式 */
+.invite-banner {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.invite-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.invite-banner h2 {
+  margin-bottom: 12px;
+  font-size: 22px;
+}
+
+.invite-room-id {
+  color: #6c7086;
+  font-size: 14px;
+}
+
+.invite-room-id code {
+  background: #313244;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #89b4fa;
+  font-size: 13px;
+}
+
+.btn-block {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.btn-link {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  background: none;
+  border: none;
+  color: #6c7086;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+  transition: color 0.2s;
+}
+
+.btn-link:hover {
+  color: #a6adc8;
+}
+
+/* 通用 */
 .form-group {
   margin-bottom: 20px;
 }
