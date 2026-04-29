@@ -81,6 +81,9 @@ export class RoomManager {
     await this.peerService.init();
 
     this._role = RoomRole.Client;
+    // 先设置临时 roomState 以便 sendToHost 能正常工作
+    this._roomState = { roomId, hostId: roomId, players: [] };
+
     await this.peerService.connectTo(roomId);
 
     this.unsubData = this.peerService.onData((_senderId, data) => {
@@ -95,9 +98,15 @@ export class RoomManager {
       timestamp: Date.now(),
     });
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.messageBus.off(MessageType.ROOM_STATE, handler);
+        reject(new Error('加入房间超时，房间可能已关闭'));
+      }, 10000);
+
       const handler = (msg: GameMessage<RoomState>) => {
         if (msg.type === MessageType.ROOM_STATE) {
+          clearTimeout(timeout);
           this.messageBus.off(MessageType.ROOM_STATE, handler);
           resolve(msg.payload);
         }
