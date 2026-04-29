@@ -2,10 +2,11 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { VueLoaderPlugin } = require('vue-loader');
 
-const isProduction = process.env.NODE_ENV === 'production';
-const publicPath = isProduction ? '/CardGame/' : '/';
+module.exports = (env, argv) => {
+  const isProduction = argv.mode === 'production';
+  const publicPath = isProduction ? '/CardGame/' : '/';
 
-module.exports = {
+  return {
   entry: './src/main.ts',
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -54,4 +55,5 @@ module.exports = {
     open: true,
     allowedHosts: 'all',
   },
+};
 };
