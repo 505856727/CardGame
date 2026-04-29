@@ -484,4 +484,107 @@ h2 {
 h3 {
   color: #a6adc8;
 }
+
+/* 手机竖屏 */
+@media (max-width: 600px) {
+  .room {
+    border-radius: 12px;
+  }
+
+  .room-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .room-info {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .room-info h2 {
+    font-size: 18px;
+  }
+
+  .room-id {
+    font-size: 11px;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .share-banner {
+    padding: 12px 32px 12px 14px;
+  }
+
+  .share-banner-text {
+    font-size: 13px;
+  }
+
+  .share-link-row {
+    flex-direction: column;
+  }
+
+  .share-link-input {
+    font-size: 11px;
+  }
+
+  .room-body {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .players-panel {
+    border-right: none;
+    border-bottom: 1px solid #313244;
+    padding: 12px 16px;
+  }
+
+  .player-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+  }
+
+  .player-item {
+    padding: 4px 0;
+  }
+
+  .chat-panel {
+    padding: 12px 16px;
+  }
+
+  .message-list {
+    max-height: 240px;
+  }
+
+  .send-bar input {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .send-bar .btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+}
+
+/* 手机横屏 / 小平板 */
+@media (min-width: 601px) and (max-width: 900px) {
+  .room-body {
+    grid-template-columns: 160px 1fr;
+  }
+
+  .room-header {
+    padding: 16px 20px;
+  }
+}
 </style>

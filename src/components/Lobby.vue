@@ -486,4 +486,43 @@ input::placeholder {
   color: #f38ba8;
   font-size: 13px;
 }
+
+@media (max-width: 600px) {
+  .lobby {
+    padding: 20px 16px;
+    border-radius: 12px;
+  }
+
+  h2 {
+    font-size: 20px;
+    margin-bottom: 18px;
+  }
+
+  .invite-icon {
+    font-size: 36px;
+  }
+
+  .invite-banner h2 {
+    font-size: 18px;
+  }
+
+  .join-group {
+    flex-direction: column;
+  }
+
+  .join-group input {
+    width: 100%;
+  }
+
+  .room-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .room-card-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
 </style>

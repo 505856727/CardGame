@@ -127,6 +127,24 @@ body {
   font-size: 15px;
 }
 
+@media (max-width: 600px) {
+  .app {
+    padding: 20px 12px;
+  }
+
+  .app-header {
+    margin-bottom: 24px;
+  }
+
+  .app-header h1 {
+    font-size: 24px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+  }
+}
+
 .app-main {
   min-height: 300px;
 }
