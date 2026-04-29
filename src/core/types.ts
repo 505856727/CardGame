@@ -65,12 +65,16 @@ export interface PeerServerConfig {
 
 export const ROOM_ID_PREFIX = 'cg-room-';
 
-export const DEFAULT_SERVER_CONFIG: PeerServerConfig = {
-  host: location.hostname,
-  port: 9000,
-  path: '/cardgame',
-  secure: location.protocol === 'https:',
-};
+const isLocalDev = typeof location !== 'undefined'
+  && (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+
+/**
+ * 本地开发 → 连接 localhost:9000 自建 PeerJS 服务器（支持房间发现）
+ * 生产环境 → 连接 PeerJS 公共云服务器（不支持房间发现，但创建/加入房间正常）
+ */
+export const DEFAULT_SERVER_CONFIG: PeerServerConfig = isLocalDev
+  ? { host: 'localhost', port: 9000, path: '/cardgame', secure: false }
+  : { host: '0.peerjs.com', port: 443, path: '/', secure: true };
 
 // ---- 房间发现 ----
 

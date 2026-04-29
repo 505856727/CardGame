@@ -79,6 +79,7 @@
 
       <div v-else class="empty-rooms">
         <p v-if="discovering">正在搜索房间...</p>
+        <p v-else-if="isPublicServer">公共服务器不支持房间列表，请通过房间 ID 或邀请链接加入</p>
         <p v-else>暂无在线房间，点击"刷新列表"搜索或创建一个新房间</p>
       </div>
     </div>
@@ -88,8 +89,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import type { RoomInfo } from '@/core/types';
+import { DEFAULT_SERVER_CONFIG } from '@/core/types';
 
 const props = defineProps<{
   rooms: RoomInfo[];
@@ -102,6 +104,8 @@ const emit = defineEmits<{
   join: [roomId: string, playerName: string];
   refresh: [];
 }>();
+
+const isPublicServer = computed(() => DEFAULT_SERVER_CONFIG.host === '0.peerjs.com');
 
 const playerName = ref('');
 const roomId = ref(props.initialRoomId ?? '');
