@@ -28,7 +28,7 @@
         {{ loading ? '加入中...' : '立即加入' }}
       </button>
 
-      <button class="btn btn-link" @click="exitInviteMode">
+      <button class="btn btn-link" :disabled="loading" @click="exitInviteMode">
         返回大厅
       </button>
 
@@ -135,11 +135,11 @@ const props = defineProps<{
   rooms: RoomInfo[];
   discovering: boolean;
   initialRoomId?: string;
+  onCreate: (playerName: string) => Promise<unknown>;
+  onJoin: (roomId: string, playerName: string) => Promise<unknown>;
 }>();
 
-const emit = defineEmits<{
-  create: [playerName: string];
-  join: [roomId: string, playerName: string];
+defineEmits<{
   refresh: [];
 }>();
 
@@ -154,9 +154,6 @@ const mode = ref<'create' | 'join' | null>(null);
 const errorMsg = ref('');
 
 onMounted(async () => {
-  if (!isInviteMode.value) {
-    emit('refresh');
-  }
   await nextTick();
   inviteNameInput.value?.focus();
 });
@@ -164,11 +161,9 @@ onMounted(async () => {
 function exitInviteMode() {
   isInviteMode.value = false;
   roomId.value = '';
-  // 清除 URL 中的 room 参数
   const url = new URL(window.location.href);
   url.searchParams.delete('room');
   window.history.replaceState({}, '', url.toString());
-  emit('refresh');
 }
 
 function selectRoom(id: string) {
@@ -181,11 +176,12 @@ function handleJoinRoom(id: string) {
 }
 
 async function handleCreate() {
+  if (!playerName.value.trim()) return;
   mode.value = 'create';
   loading.value = true;
   errorMsg.value = '';
   try {
-    emit('create', playerName.value.trim());
+    await props.onCreate(playerName.value.trim());
   } catch (e) {
     errorMsg.value = (e as Error).message;
   } finally {
@@ -199,7 +195,7 @@ async function handleJoin() {
   loading.value = true;
   errorMsg.value = '';
   try {
-    emit('join', roomId.value.trim(), playerName.value.trim());
+    await props.onJoin(roomId.value.trim(), playerName.value.trim());
   } catch (e) {
     errorMsg.value = (e as Error).message;
   } finally {

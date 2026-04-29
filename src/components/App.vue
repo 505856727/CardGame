@@ -11,8 +11,8 @@
         :rooms="availableRooms"
         :discovering="discovering"
         :initial-room-id="initialRoomId"
-        @create="handleCreate"
-        @join="handleJoin"
+        :on-create="handleCreate"
+        :on-join="handleJoin"
         @refresh="handleRefresh"
       />
       <Room
