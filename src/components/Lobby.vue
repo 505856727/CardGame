@@ -77,8 +77,13 @@
         </div>
       </div>
 
-      <!-- 房间列表 -->
-      <div class="room-list-section">
+      <!-- 公共服务器提示 -->
+      <div v-if="isPublicServer" class="public-hint">
+        <p>通过邀请链接或房间 ID 加入好友的房间</p>
+      </div>
+
+      <!-- 房间列表（仅自建服务器可用） -->
+      <div v-else class="room-list-section">
         <div class="room-list-header">
           <h3>在线房间</h3>
           <button
@@ -116,7 +121,6 @@
 
         <div v-else class="empty-rooms">
           <p v-if="discovering">正在搜索房间...</p>
-          <p v-else-if="isPublicServer">公共服务器不支持房间列表，请通过房间 ID 或邀请链接加入</p>
           <p v-else>暂无在线房间，点击"刷新列表"搜索或创建一个新房间</p>
         </div>
       </div>
@@ -457,6 +461,19 @@ input::placeholder {
 }
 
 .empty-rooms p {
+  margin: 0;
+}
+
+.public-hint {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid #313244;
+  text-align: center;
+  color: #6c7086;
+  font-size: 14px;
+}
+
+.public-hint p {
   margin: 0;
 }
 

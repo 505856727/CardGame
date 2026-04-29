@@ -17,6 +17,25 @@
       </div>
     </div>
 
+    <!-- 分享提示横幅（房主首次进入时显示） -->
+    <div v-if="showShareBanner && role === 'host'" class="share-banner">
+      <div class="share-banner-text">
+        <strong>房间已创建！</strong> 分享下面的链接邀请好友加入：
+      </div>
+      <div class="share-link-row">
+        <input
+          class="share-link-input"
+          :value="inviteLink"
+          readonly
+          @click="($event.target as HTMLInputElement).select()"
+        />
+        <button class="btn btn-primary btn-sm" @click="copyInviteLinkAndHint">
+          {{ copied ? '已复制' : '复制' }}
+        </button>
+      </div>
+      <button class="share-banner-close" @click="showShareBanner = false">&times;</button>
+    </div>
+
     <div class="room-body">
       <div class="players-panel">
         <h3>玩家列表 ({{ roomState?.players.length || 0 }})</h3>
@@ -85,6 +104,17 @@ const emit = defineEmits<{
 
 const msgInput = ref('');
 const messageListRef = ref<HTMLElement | null>(null);
+const showShareBanner = ref(true);
+const copied = ref(false);
+
+const inviteLink = (() => {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('room');
+  if (props.roomState?.roomId) {
+    url.searchParams.set('room', props.roomState.roomId);
+  }
+  return url.toString();
+})();
 
 watch(
   () => props.messages.length,
@@ -121,11 +151,13 @@ function copyRoomId() {
 }
 
 function copyInviteLink() {
-  if (props.roomState?.roomId) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('room', props.roomState.roomId);
-    navigator.clipboard.writeText(url.toString());
-  }
+  navigator.clipboard.writeText(inviteLink);
+}
+
+function copyInviteLinkAndHint() {
+  navigator.clipboard.writeText(inviteLink);
+  copied.value = true;
+  setTimeout(() => { copied.value = false; }, 2000);
 }
 </script>
 
@@ -201,6 +233,68 @@ h2 {
 .role-badge.client {
   background: rgba(137, 180, 250, 0.2);
   color: #89b4fa;
+}
+
+/* 分享横幅 */
+.share-banner {
+  position: relative;
+  padding: 16px 40px 16px 20px;
+  background: rgba(137, 180, 250, 0.1);
+  border-bottom: 1px solid rgba(137, 180, 250, 0.2);
+}
+
+.share-banner-text {
+  color: #cdd6f4;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.share-banner-text strong {
+  color: #a6e3a1;
+}
+
+.share-link-row {
+  display: flex;
+  gap: 8px;
+}
+
+.share-link-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: #313244;
+  border: 1px solid #45475a;
+  border-radius: 6px;
+  color: #89b4fa;
+  font-size: 13px;
+  font-family: monospace;
+  outline: none;
+  cursor: text;
+}
+
+.share-link-input:focus {
+  border-color: #89b4fa;
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.share-banner-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #6c7086;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+}
+
+.share-banner-close:hover {
+  color: #cdd6f4;
 }
 
 .room-body {
