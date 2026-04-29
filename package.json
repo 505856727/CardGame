@@ -5,9 +5,11 @@
   "private": true,
   "scripts": {
     "dev": "webpack serve --mode development",
+    "server": "node server.js",
     "build": "webpack --mode production"
   },
   "dependencies": {
+    "peer": "^1.0.2",
     "peerjs": "^1.5.5",
     "vue": "^3.5.13"
   },

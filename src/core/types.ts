@@ -53,3 +53,29 @@ export interface PeerConnection {
 }
 
 export type MessageHandler<T = unknown> = (message: GameMessage<T>) => void;
+
+// ---- 服务器配置 ----
+
+export interface PeerServerConfig {
+  host: string;
+  port: number;
+  path: string;
+  secure: boolean;
+}
+
+export const ROOM_ID_PREFIX = 'cg-room-';
+
+export const DEFAULT_SERVER_CONFIG: PeerServerConfig = {
+  host: location.hostname,
+  port: 9000,
+  path: '/cardgame',
+  secure: location.protocol === 'https:',
+};
+
+// ---- 房间发现 ----
+
+export interface RoomInfo {
+  roomId: string;
+  hostName: string;
+  playerCount: number;
+}

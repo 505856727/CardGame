@@ -11,7 +11,10 @@
           {{ role === 'host' ? '房主' : '玩家' }}
         </span>
       </div>
-      <button class="btn btn-danger" @click="$emit('leave')">离开房间</button>
+      <div class="header-actions">
+        <button class="btn btn-outline-light" @click="copyInviteLink">复制邀请链接</button>
+        <button class="btn btn-danger" @click="$emit('leave')">离开房间</button>
+      </div>
     </div>
 
     <div class="room-body">
@@ -114,6 +117,14 @@ function formatPayload(payload: unknown): string {
 function copyRoomId() {
   if (props.roomState?.roomId) {
     navigator.clipboard.writeText(props.roomState.roomId);
+  }
+}
+
+function copyInviteLink() {
+  if (props.roomState?.roomId) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', props.roomState.roomId);
+    navigator.clipboard.writeText(url.toString());
   }
 }
 </script>
@@ -336,6 +347,22 @@ h2 {
 
 .btn-primary:hover:not(:disabled) {
   background: #74c7ec;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-outline-light {
+  background: transparent;
+  border: 1px solid #45475a;
+  color: #a6adc8;
+}
+
+.btn-outline-light:hover {
+  border-color: #89b4fa;
+  color: #89b4fa;
 }
 
 .btn-danger {

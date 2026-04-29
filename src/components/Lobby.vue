@@ -40,23 +40,87 @@
       </div>
     </div>
 
+    <!-- 房间列表 -->
+    <div class="room-list-section">
+      <div class="room-list-header">
+        <h3>在线房间</h3>
+        <button
+          class="btn btn-sm btn-outline"
+          :disabled="discovering"
+          @click="$emit('refresh')"
+        >
+          {{ discovering ? '搜索中...' : '刷新列表' }}
+        </button>
+      </div>
+
+      <div v-if="rooms.length > 0" class="room-list">
+        <div
+          v-for="room in rooms"
+          :key="room.roomId"
+          class="room-card"
+          @click="selectRoom(room.roomId)"
+        >
+          <div class="room-card-info">
+            <span class="room-host">{{ room.hostName }} 的房间</span>
+            <span class="room-id-label">{{ room.roomId }}</span>
+          </div>
+          <div class="room-card-meta">
+            <span class="player-count">{{ room.playerCount }} 人</span>
+            <button
+              class="btn btn-sm btn-secondary"
+              :disabled="!playerName.trim() || loading"
+              @click.stop="handleJoinRoom(room.roomId)"
+            >
+              加入
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="empty-rooms">
+        <p v-if="discovering">正在搜索房间...</p>
+        <p v-else>暂无在线房间，点击"刷新列表"搜索或创建一个新房间</p>
+      </div>
+    </div>
+
     <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import type { RoomInfo } from '@/core/types';
+
+const props = defineProps<{
+  rooms: RoomInfo[];
+  discovering: boolean;
+  initialRoomId?: string;
+}>();
 
 const emit = defineEmits<{
   create: [playerName: string];
   join: [roomId: string, playerName: string];
+  refresh: [];
 }>();
 
 const playerName = ref('');
-const roomId = ref('');
+const roomId = ref(props.initialRoomId ?? '');
 const loading = ref(false);
 const mode = ref<'create' | 'join' | null>(null);
 const errorMsg = ref('');
+
+onMounted(() => {
+  emit('refresh');
+});
+
+function selectRoom(id: string) {
+  roomId.value = id;
+}
+
+function handleJoinRoom(id: string) {
+  roomId.value = id;
+  handleJoin();
+}
 
 async function handleCreate() {
   mode.value = 'create';
@@ -72,6 +136,7 @@ async function handleCreate() {
 }
 
 async function handleJoin() {
+  if (!playerName.value.trim() || !roomId.value.trim()) return;
   mode.value = 'join';
   loading.value = true;
   errorMsg.value = '';
@@ -87,7 +152,7 @@ async function handleJoin() {
 
 <style scoped>
 .lobby {
-  max-width: 420px;
+  max-width: 520px;
   margin: 0 auto;
   padding: 32px;
   background: #1e1e2e;
@@ -174,6 +239,22 @@ input::placeholder {
   background: #94e2d5;
 }
 
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #45475a;
+  color: #a6adc8;
+}
+
+.btn-outline:hover:not(:disabled) {
+  border-color: #89b4fa;
+  color: #89b4fa;
+}
+
 .divider {
   text-align: center;
   color: #6c7086;
@@ -187,6 +268,89 @@ input::placeholder {
 
 .join-group input {
   flex: 1;
+}
+
+/* 房间列表 */
+.room-list-section {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid #313244;
+}
+
+.room-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.room-list-header h3 {
+  margin: 0;
+  color: #cdd6f4;
+  font-size: 16px;
+}
+
+.room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.room-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #313244;
+  border: 1px solid #45475a;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.room-card:hover {
+  border-color: #89b4fa;
+  background: #3b3c52;
+}
+
+.room-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.room-host {
+  color: #cdd6f4;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.room-id-label {
+  color: #6c7086;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.room-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.player-count {
+  color: #a6adc8;
+  font-size: 13px;
+}
+
+.empty-rooms {
+  text-align: center;
+  padding: 24px 0;
+  color: #6c7086;
+  font-size: 14px;
+}
+
+.empty-rooms p {
+  margin: 0;
 }
 
 .error {

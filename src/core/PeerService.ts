@@ -1,5 +1,10 @@
 import { Peer, type DataConnection } from 'peerjs';
-import { PeerStatus, type PeerConnection } from './types';
+import {
+  PeerStatus,
+  DEFAULT_SERVER_CONFIG,
+  type PeerConnection,
+  type PeerServerConfig,
+} from './types';
 
 type StatusChangeCallback = (status: PeerStatus) => void;
 type ConnectionCallback = (conn: PeerConnection) => void;
@@ -15,6 +20,11 @@ export class PeerService {
 
   private _status: PeerStatus = PeerStatus.Disconnected;
   private _peerId: string | null = null;
+  private serverConfig: PeerServerConfig;
+
+  constructor(config?: Partial<PeerServerConfig>) {
+    this.serverConfig = { ...DEFAULT_SERVER_CONFIG, ...config };
+  }
 
   get status(): PeerStatus {
     return this._status;
@@ -36,7 +46,14 @@ export class PeerService {
 
       this.setStatus(PeerStatus.Connecting);
 
-      this.peer = customId ? new Peer(customId) : new Peer();
+      const opts = {
+        host: this.serverConfig.host,
+        port: this.serverConfig.port,
+        path: this.serverConfig.path,
+        secure: this.serverConfig.secure,
+      };
+
+      this.peer = customId ? new Peer(customId, opts) : new Peer(opts);
 
       this.peer.on('open', (id) => {
         this._peerId = id;
@@ -61,6 +78,18 @@ export class PeerService {
       this.peer.on('close', () => {
         this._peerId = null;
         this.setStatus(PeerStatus.Disconnected);
+      });
+    });
+  }
+
+  listAllPeers(): Promise<string[]> {
+    return new Promise((resolve, reject) => {
+      if (!this.peer) {
+        reject(new Error('Peer not initialized'));
+        return;
+      }
+      this.peer.listAllPeers((peers) => {
+        resolve(peers as string[]);
       });
     });
   }

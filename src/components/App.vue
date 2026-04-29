@@ -8,8 +8,12 @@
     <main class="app-main">
       <Lobby
         v-if="!roomState"
+        :rooms="availableRooms"
+        :discovering="discovering"
+        :initial-room-id="initialRoomId"
         @create="handleCreate"
         @join="handleJoin"
+        @refresh="handleRefresh"
       />
       <Room
         v-else
@@ -26,6 +30,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import Lobby from './Lobby.vue';
 import Room from './Room.vue';
 import { useRoom } from '@/composables/useRoom';
@@ -35,26 +40,51 @@ const {
   role,
   messages,
   error,
+  availableRooms,
+  discovering,
   createRoom,
   joinRoom,
   leaveRoom,
   sendMessage,
+  refreshRooms,
 } = useRoom();
+
+const initialRoomId = computed(() => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('room') ?? '';
+});
 
 async function handleCreate(playerName: string) {
   await createRoom(playerName);
+  updateUrl(roomState.value?.roomId);
 }
 
 async function handleJoin(roomId: string, playerName: string) {
   await joinRoom(roomId, playerName);
+  updateUrl(roomId);
 }
 
 function handleLeave() {
   leaveRoom();
+  updateUrl(null);
 }
 
 function handleSend(type: string, payload: unknown) {
   sendMessage(type, payload);
+}
+
+function handleRefresh() {
+  refreshRooms();
+}
+
+function updateUrl(roomId: string | null | undefined) {
+  const url = new URL(window.location.href);
+  if (roomId) {
+    url.searchParams.set('room', roomId);
+  } else {
+    url.searchParams.delete('room');
+  }
+  window.history.replaceState({}, '', url.toString());
 }
 </script>
 

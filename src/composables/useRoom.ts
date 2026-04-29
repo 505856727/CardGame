@@ -2,17 +2,21 @@ import { ref, readonly, onUnmounted, shallowRef } from 'vue';
 import { PeerService } from '@/core/PeerService';
 import { MessageBus } from '@/core/MessageBus';
 import { RoomManager } from '@/core/RoomManager';
-import { RoomRole, type GameMessage, type RoomState } from '@/core/types';
+import { RoomDiscovery } from '@/core/RoomDiscovery';
+import { RoomRole, type GameMessage, type RoomState, type RoomInfo } from '@/core/types';
 
 const peerService = new PeerService();
 const messageBus = new MessageBus();
 const roomManager = new RoomManager(peerService, messageBus);
+const roomDiscovery = new RoomDiscovery(peerService, roomManager);
 
 export function useRoom() {
   const roomState = shallowRef<RoomState | null>(null);
   const role = ref<RoomRole>(RoomRole.None);
   const messages = ref<GameMessage[]>([]);
   const error = ref<Error | null>(null);
+  const availableRooms = ref<RoomInfo[]>([]);
+  const discovering = ref(false);
 
   const unsubState = roomManager.onRoomStateChange((state) => {
     roomState.value = { ...state };
@@ -69,6 +73,18 @@ export function useRoom() {
     roomManager.sendMessage(type, payload);
   }
 
+  async function refreshRooms() {
+    discovering.value = true;
+    error.value = null;
+    try {
+      availableRooms.value = await roomDiscovery.discoverRooms();
+    } catch (e) {
+      error.value = e as Error;
+    } finally {
+      discovering.value = false;
+    }
+  }
+
   return {
     roomManager,
     messageBus,
@@ -76,9 +92,12 @@ export function useRoom() {
     role: readonly(role),
     messages: readonly(messages),
     error: readonly(error),
+    availableRooms: readonly(availableRooms),
+    discovering: readonly(discovering),
     createRoom,
     joinRoom,
     leaveRoom,
     sendMessage,
+    refreshRooms,
   };
 }

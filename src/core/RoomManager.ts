@@ -3,12 +3,23 @@ import { MessageBus } from './MessageBus';
 import {
   MessageType,
   RoomRole,
+  ROOM_ID_PREFIX,
   type GameMessage,
   type Player,
   type RoomState,
+  type RoomInfo,
 } from './types';
 
 type RoomStateChangeCallback = (state: RoomState) => void;
+
+function generateRoomId(): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let id = '';
+  for (let i = 0; i < 6; i++) {
+    id += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return ROOM_ID_PREFIX + id;
+}
 
 export class RoomManager {
   private peerService: PeerService;
@@ -41,7 +52,8 @@ export class RoomManager {
 
   async createRoom(playerName: string): Promise<RoomState> {
     this._playerName = playerName;
-    const peerId = await this.peerService.init();
+    const roomId = generateRoomId();
+    const peerId = await this.peerService.init(roomId);
 
     this._role = RoomRole.Host;
     this._roomState = {
@@ -51,7 +63,6 @@ export class RoomManager {
     };
 
     this.unsubConn = this.peerService.onConnection(({ peerId: remotePeerId }) => {
-      // 新连接时还不知道玩家名，等待 PLAYER_JOIN 消息
       console.log(`[Host] New connection from: ${remotePeerId}`);
     });
 
@@ -93,6 +104,53 @@ export class RoomManager {
       };
       this.messageBus.on(MessageType.ROOM_STATE, handler);
     });
+  }
+
+  /**
+   * 查询指定房间的元数据。
+   * 临时建立连接获取房间信息后立即断开。
+   */
+  async queryRoomInfo(roomId: string): Promise<RoomInfo | null> {
+    const tmpPeer = new PeerService();
+    try {
+      await tmpPeer.init();
+      const conn = await tmpPeer.connectTo(roomId);
+
+      return new Promise<RoomInfo | null>((resolve) => {
+        const timeout = setTimeout(() => {
+          tmpPeer.destroy();
+          resolve(null);
+        }, 3000);
+
+        conn.on('data', (data) => {
+          const msg = data as GameMessage;
+          if (msg.type === MessageType.ROOM_STATE) {
+            clearTimeout(timeout);
+            const state = msg.payload as RoomState;
+            const hostPlayer = state.players.find((p) => p.id === state.hostId);
+            tmpPeer.destroy();
+            resolve({
+              roomId: state.roomId,
+              hostName: hostPlayer?.name ?? 'Unknown',
+              playerCount: state.players.length,
+            });
+          }
+        });
+
+        // 发送一个探测消息请求房间状态
+        conn.on('open', () => {
+          conn.send({
+            type: MessageType.ROOM_STATE,
+            payload: { query: true },
+            senderId: tmpPeer.peerId,
+            timestamp: Date.now(),
+          } as GameMessage);
+        });
+      });
+    } catch {
+      tmpPeer.destroy();
+      return null;
+    }
   }
 
   leaveRoom(): void {
@@ -180,9 +238,22 @@ export class RoomManager {
         break;
       }
 
+      case MessageType.ROOM_STATE: {
+        const payload = msg.payload as { query?: boolean };
+        if (payload.query) {
+          // 有人在探测房间信息，回复当前状态
+          this.peerService.send(msg.senderId, {
+            type: MessageType.ROOM_STATE,
+            payload: this._roomState,
+            senderId: this.peerService.peerId!,
+            timestamp: Date.now(),
+          });
+        }
+        break;
+      }
+
       default: {
         this.messageBus.emit(msg);
-        // Host 转发非系统消息给所有其他客户端
         this.peerService.activeConnections.forEach((conn, peerId) => {
           if (peerId !== msg.senderId && conn.open) {
             conn.send(msg);
