@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { VueLoaderPlugin } = require('vue-loader');
 
@@ -46,6 +47,12 @@ module.exports = (env, argv) => {
     new HtmlWebpackPlugin({
       template: './src/index.html',
       title: '卡牌游戏中台',
+    }),
+    new webpack.DefinePlugin({
+      __DEV_SERVER__: JSON.stringify(!isProduction),
+      __PEER_SERVER_HOST__: JSON.stringify(
+        isProduction ? 'cardgame-peer-server.onrender.com' : '',
+      ),
     }),
   ],
   devServer: {

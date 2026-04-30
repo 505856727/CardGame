@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: cardgame-peer-server
+    runtime: node
+    buildCommand: npm install --production
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production

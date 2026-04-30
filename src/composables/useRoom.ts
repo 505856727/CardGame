@@ -1,7 +1,7 @@
 import { ref, readonly, onUnmounted, shallowRef } from 'vue';
 import { PeerService } from '@/core/PeerService';
 import { MessageBus } from '@/core/MessageBus';
-import { RoomManager } from '@/core/RoomManager';
+import { RoomManager, getReconnectData } from '@/core/RoomManager';
 import { RoomDiscovery } from '@/core/RoomDiscovery';
 import { RoomRole, type GameMessage, type RoomState, type RoomInfo } from '@/core/types';
 
@@ -73,6 +73,21 @@ export function useRoom() {
     roomManager.sendMessage(type, payload);
   }
 
+  async function tryReconnect(): Promise<boolean> {
+    const data = getReconnectData();
+    if (!data) return false;
+    try {
+      if (data.role === RoomRole.Host) {
+        await createRoom(data.playerName);
+      } else {
+        await joinRoom(data.roomId, data.playerName);
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async function refreshRooms() {
     discovering.value = true;
     error.value = null;
@@ -98,6 +113,7 @@ export function useRoom() {
     joinRoom,
     leaveRoom,
     sendMessage,
+    tryReconnect,
     refreshRooms,
   };
 }

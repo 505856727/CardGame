@@ -10,7 +10,32 @@ import {
   type RoomInfo,
 } from './types';
 
+const RECONNECT_KEY = 'cg-reconnect';
+
+export interface ReconnectData {
+  roomId: string;
+  playerName: string;
+  role: RoomRole;
+}
+
 type RoomStateChangeCallback = (state: RoomState) => void;
+
+function saveReconnectData(data: ReconnectData): void {
+  sessionStorage.setItem(RECONNECT_KEY, JSON.stringify(data));
+}
+
+function clearReconnectData(): void {
+  sessionStorage.removeItem(RECONNECT_KEY);
+}
+
+export function getReconnectData(): ReconnectData | null {
+  try {
+    const raw = sessionStorage.getItem(RECONNECT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
 function generateRoomId(): string {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -29,6 +54,7 @@ export class RoomManager {
   private _role: RoomRole = RoomRole.None;
   private _roomState: RoomState | null = null;
   private _playerName = '';
+  private _chatHistory: GameMessage[] = [];
 
   private unsubData: (() => void) | null = null;
   private unsubConn: (() => void) | null = null;
@@ -72,6 +98,7 @@ export class RoomManager {
       this.handleHostMessage(msg);
     });
 
+    saveReconnectData({ roomId: peerId, playerName, role: RoomRole.Host });
     this.notifyStateChange();
     return this._roomState;
   }
@@ -97,6 +124,8 @@ export class RoomManager {
       senderId: this.peerService.peerId!,
       timestamp: Date.now(),
     });
+
+    saveReconnectData({ roomId, playerName, role: RoomRole.Client });
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -181,6 +210,8 @@ export class RoomManager {
     this._role = RoomRole.None;
     this._roomState = null;
     this._playerName = '';
+    this._chatHistory = [];
+    clearReconnectData();
     this.notifyStateChange();
   }
 
@@ -194,6 +225,7 @@ export class RoomManager {
     };
 
     if (this._role === RoomRole.Host) {
+      this._chatHistory.push(msg);
       this.messageBus.emit(msg);
       this.broadcast(msg);
     } else if (this._role === RoomRole.Client) {
@@ -228,6 +260,16 @@ export class RoomManager {
           senderId: this.peerService.peerId!,
           timestamp: Date.now(),
         });
+
+        if (this._chatHistory.length > 0) {
+          this.peerService.send(msg.senderId, {
+            type: MessageType.CHAT_HISTORY,
+            payload: this._chatHistory,
+            senderId: this.peerService.peerId!,
+            timestamp: Date.now(),
+          });
+        }
+
         this.notifyStateChange();
         break;
       }
@@ -264,6 +306,7 @@ export class RoomManager {
       }
 
       default: {
+        this._chatHistory.push(msg);
         this.messageBus.emit(msg);
         this.peerService.activeConnections.forEach((conn, peerId) => {
           if (peerId !== msg.senderId && conn.open) {
@@ -281,6 +324,11 @@ export class RoomManager {
       this.notifyStateChange();
     }
     this.messageBus.emit(msg);
+
+    if (msg.type === MessageType.CHAT_HISTORY) {
+      const history = msg.payload as GameMessage[];
+      this._chatHistory = [...history];
+    }
   }
 
   private sendToHost(msg: GameMessage): void {

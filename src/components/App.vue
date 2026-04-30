@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import Lobby from './Lobby.vue';
 import Room from './Room.vue';
 import { useRoom } from '@/composables/useRoom';
@@ -46,8 +46,13 @@ const {
   joinRoom,
   leaveRoom,
   sendMessage,
+  tryReconnect,
   refreshRooms,
 } = useRoom();
+
+onMounted(() => {
+  tryReconnect();
+});
 
 const initialRoomId = computed(() => {
   const params = new URLSearchParams(window.location.search);

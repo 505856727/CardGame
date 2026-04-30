@@ -77,13 +77,8 @@
         </div>
       </div>
 
-      <!-- 公共服务器提示 -->
-      <div v-if="isPublicServer" class="public-hint">
-        <p>通过邀请链接或房间 ID 加入好友的房间</p>
-      </div>
-
-      <!-- 房间列表（仅自建服务器可用） -->
-      <div v-else class="room-list-section">
+      <!-- 房间列表 -->
+      <div class="room-list-section">
         <div class="room-list-header">
           <h3>在线房间</h3>
           <button
@@ -131,9 +126,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import type { RoomInfo } from '@/core/types';
-import { DEFAULT_SERVER_CONFIG } from '@/core/types';
 
 const props = defineProps<{
   rooms: RoomInfo[];
@@ -147,7 +141,6 @@ defineEmits<{
   refresh: [];
 }>();
 
-const isPublicServer = computed(() => DEFAULT_SERVER_CONFIG.host === '0.peerjs.com');
 const isInviteMode = ref(!!props.initialRoomId);
 const inviteNameInput = ref<HTMLInputElement | null>(null);
 
@@ -461,19 +454,6 @@ input::placeholder {
 }
 
 .empty-rooms p {
-  margin: 0;
-}
-
-.public-hint {
-  margin-top: 28px;
-  padding-top: 24px;
-  border-top: 1px solid #313244;
-  text-align: center;
-  color: #6c7086;
-  font-size: 14px;
-}
-
-.public-hint p {
   margin: 0;
 }
 

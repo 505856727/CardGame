@@ -109,10 +109,18 @@ const systemTypes = new Set<string>([
   MessageType.PLAYER_JOIN,
   MessageType.PLAYER_LEAVE,
   MessageType.ROOM_STATE,
+  MessageType.CHAT_HISTORY,
 ]);
-const chatMessages = computed(() =>
-  props.messages.filter((m) => !systemTypes.has(m.type as string)),
-);
+
+const historyMessages = computed(() => {
+  const historyMsg = props.messages.find((m) => m.type === MessageType.CHAT_HISTORY);
+  return historyMsg ? (historyMsg.payload as GameMessage[]) : [];
+});
+
+const chatMessages = computed(() => {
+  const live = props.messages.filter((m) => !systemTypes.has(m.type as string));
+  return [...historyMessages.value, ...live];
+});
 const showShareBanner = ref(true);
 const copied = ref(false);
 
